@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
 
 export default function NotesPage() {
   const [students, setStudents] = useState<any[]>([]);
@@ -59,13 +60,20 @@ export default function NotesPage() {
   };
 
   return (
-    <main>
-      <h1 className="text-2xl font-bold mb-6">Notes</h1>
+    <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Notes</h1>
+        <Link
+          href="/students"
+          className="rounded-md bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
+        >
+          Voir les élèves
+        </Link>
+      </div>
 
-      {/* FORM */}
-      <div className="flex gap-2 mb-6">
+      <div className="mb-6 flex flex-wrap gap-2 rounded-lg border border-gray-800 bg-gray-900 p-3">
         <select
-          className="border border-gray-700 bg-gray-900 text-white p-2 rounded"
+          className="rounded-md border border-gray-700 bg-black p-2 text-white outline-none focus:border-blue-500"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
         >
@@ -79,7 +87,7 @@ export default function NotesPage() {
 
         <input
           placeholder="Matière"
-          className="border border-gray-700 bg-gray-900 text-white p-2 rounded"
+          className="rounded-md border border-gray-700 bg-black p-2 text-white outline-none focus:border-blue-500"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
         />
@@ -87,22 +95,21 @@ export default function NotesPage() {
         <input
           placeholder="Note"
           type="number"
-          className="border border-gray-700 bg-gray-900 text-white p-2 rounded w-24"
+          className="w-24 rounded-md border border-gray-700 bg-black p-2 text-white outline-none focus:border-blue-500"
           value={score}
           onChange={(e) => setScore(e.target.value)}
         />
 
         <button
           onClick={addNote}
-          className="bg-white text-black px-4 rounded"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
         >
-          Ajouter
+          Add
         </button>
       </div>
 
-      {/* FILTER */}
       <select
-        className="border border-gray-700 bg-gray-900 text-white p-2 rounded mb-4"
+        className="mb-4 rounded-md border border-gray-700 bg-gray-900 p-2 text-white outline-none focus:border-blue-500"
         value={filterStudent}
         onChange={(e) => setFilterStudent(e.target.value)}
       >
@@ -114,10 +121,9 @@ export default function NotesPage() {
         ))}
       </select>
 
-      {/* TABLE */}
       <div className="border border-gray-700 rounded bg-gray-900 overflow-hidden">
         <table className="w-full">
-          <thead className="text-white" style={{ backgroundColor: '#93c5fd' }}>
+          <thead className="text-white" style={{ backgroundColor: "#2563eb" }}>
             <tr>
               <th className="p-3 text-left">Élève</th>
               <th className="p-3 text-left">Matière</th>
@@ -140,7 +146,7 @@ export default function NotesPage() {
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => deleteNote(n.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
+                      className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-500"
                     >
                       Delete
                     </button>
@@ -148,9 +154,16 @@ export default function NotesPage() {
                 </td>
               </tr>
             ))}
+            {notes.length === 0 && (
+              <tr>
+                <td colSpan={4} className="p-4 text-center text-gray-400">
+                  Aucune note trouvée.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 }

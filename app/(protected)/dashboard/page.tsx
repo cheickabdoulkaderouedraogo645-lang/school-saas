@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [studentsCount, setStudentsCount] = useState(0);
@@ -34,31 +35,65 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="p-10">
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+    <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Dashboard</h1>
 
         <button
           onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded"
+          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500"
         >
           Logout
         </button>
       </div>
 
-      {/* STATS */}
-      <div className="flex gap-6">
-        <div className="border p-4 rounded w-40">
-          <h2>Élèves</h2>
-          <p className="text-2xl font-bold">{studentsCount}</p>
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-5">
+          <p className="text-sm text-gray-400">Total Students</p>
+          <p className="mt-2 text-3xl font-bold">{studentsCount}</p>
+          <Link
+            href="/students"
+            className="mt-4 inline-flex rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+          >
+            Gérer les élèves
+          </Link>
         </div>
 
-        <div className="border p-4 rounded w-40">
-          <h2>Classes</h2>
-          <p className="text-2xl font-bold">{classesCount}</p>
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-5">
+          <p className="text-sm text-gray-400">Total Classes</p>
+          <p className="mt-2 text-3xl font-bold">{classesCount}</p>
+          <Link
+            href="/classes"
+            className="mt-4 inline-flex rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+          >
+            Gérer les classes
+          </Link>
         </div>
       </div>
-    </main>
+
+      <div className="rounded-lg border border-gray-800 bg-gray-900 p-5">
+        <h2 className="mb-4 text-lg font-semibold">Navigation rapide</h2>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/students"
+            className="rounded-md bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
+          >
+            Students
+          </Link>
+          <Link
+            href="/classes"
+            className="rounded-md bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
+          >
+            Classes
+          </Link>
+          <Link
+            href="/notes"
+            className="rounded-md bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
+          >
+            Notes
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }

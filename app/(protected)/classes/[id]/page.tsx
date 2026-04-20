@@ -22,6 +22,53 @@ type AbsenceRow = {
   status: "present" | "absent";
 };
 
+type FeeSummaryRow = {
+  student_id: string;
+  tranche1_amount: number | string | null;
+  tranche1_paid: boolean | null;
+  tranche2_amount: number | string | null;
+  tranche2_paid: boolean | null;
+};
+
+type FeeGlobalStatus = "paid" | "partial" | "unpaid" | "none";
+
+const feeNum = (value: number | string | null | undefined) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const computeFeeGlobalStatus = (fees: FeeSummaryRow[]): FeeGlobalStatus => {
+  if (!fees.length) return "none";
+
+  let totalSlots = 0;
+  let paidSlots = 0;
+
+  for (const fee of fees) {
+    const a1 = feeNum(fee.tranche1_amount);
+    const a2 = feeNum(fee.tranche2_amount);
+    if (a1 > 0) {
+      totalSlots += 1;
+      if (fee.tranche1_paid === true) paidSlots += 1;
+    }
+    if (a2 > 0) {
+      totalSlots += 1;
+      if (fee.tranche2_paid === true) paidSlots += 1;
+    }
+  }
+
+  if (totalSlots === 0) return "none";
+  if (paidSlots === totalSlots) return "paid";
+  if (paidSlots === 0) return "unpaid";
+  return "partial";
+};
+
+const feeStatusLabel: Record<FeeGlobalStatus, string> = {
+  paid: "✅ Payé",
+  partial: "⚠️ Partiel",
+  unpaid: "❌ Non payé",
+  none: "—",
+};
+
 const getOrdinalRank = (rank: number) => (rank === 1 ? "1er" : `${rank}ème`);
 
 export default function ClassStudentsPage() {
@@ -31,6 +78,7 @@ export default function ClassStudentsPage() {
   const [classItem, setClassItem] = useState<ClassRow | null>(null);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [absenceCountByStudentId, setAbsenceCountByStudentId] = useState<Record<string, number>>({});
+  const [feeStatusByStudentId, setFeeStatusByStudentId] = useState<Record<string, FeeGlobalStatus>>({});
   const [name, setName] = useState("");
 
   const fetchData = async () => {
@@ -50,15 +98,22 @@ export default function ClassStudentsPage() {
 
     if (!typedStudents.length) {
       setAbsenceCountByStudentId({});
+      setFeeStatusByStudentId({});
       return;
     }
 
     const studentIds = typedStudents.map((student) => student.id);
-    const { data: absencesData } = await supabase
-      .from("absences")
-      .select("student_id, status")
-      .in("student_id", studentIds)
-      .eq("status", "absent");
+    const [{ data: absencesData }, { data: feesData }] = await Promise.all([
+      supabase
+        .from("absences")
+        .select("student_id, status")
+        .in("student_id", studentIds)
+        .eq("status", "absent"),
+      supabase
+        .from("fees")
+        .select("student_id, tranche1_amount, tranche1_paid, tranche2_amount, tranche2_paid")
+        .in("student_id", studentIds),
+    ]);
 
     const typedAbsences = (absencesData as AbsenceRow[]) || [];
     const absenceCounts = typedAbsences.reduce<Record<string, number>>((acc, absence) => {
@@ -67,6 +122,20 @@ export default function ClassStudentsPage() {
     }, {});
 
     setAbsenceCountByStudentId(absenceCounts);
+
+    const typedFees = (feesData as FeeSummaryRow[]) || [];
+    const feesByStudent = typedFees.reduce<Record<string, FeeSummaryRow[]>>((acc, fee) => {
+      if (!acc[fee.student_id]) acc[fee.student_id] = [];
+      acc[fee.student_id].push(fee);
+      return acc;
+    }, {});
+
+    const feeStatuses = studentIds.reduce<Record<string, FeeGlobalStatus>>((acc, id) => {
+      acc[id] = computeFeeGlobalStatus(feesByStudent[id] || []);
+      return acc;
+    }, {});
+
+    setFeeStatusByStudentId(feeStatuses);
   };
 
   useEffect(() => {
@@ -136,6 +205,7 @@ export default function ClassStudentsPage() {
               <th className="p-3 text-left">Nom</th>
               <th className="p-3 text-left">Moyenne</th>
               <th className="p-3 text-left">Absences</th>
+              <th className="p-3 text-left">Frais</th>
               <th className="p-3 text-left">Rang</th>
               <th className="p-3 text-right w-56">Actions</th>
             </tr>
@@ -155,6 +225,9 @@ export default function ClassStudentsPage() {
                   {student.average !== null ? student.average.toFixed(2) : "—"}
                 </td>
                 <td className="p-3">{absenceCountByStudentId[student.id] || 0}</td>
+                <td className="p-3 text-sm">
+                  {feeStatusLabel[feeStatusByStudentId[student.id] || "none"]}
+                </td>
                 <td className="p-3">{getOrdinalRank(student.rank)}</td>
                 <td className="p-3 text-right">
                   <div className="flex justify-end gap-2">
@@ -176,7 +249,7 @@ export default function ClassStudentsPage() {
             ))}
             {rankedStudents.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-400">
+                <td colSpan={6} className="p-4 text-center text-gray-400">
                   Aucun élève dans cette classe.
                 </td>
               </tr>

@@ -52,10 +52,10 @@ export default function ClassesPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Classes</h1>
         <Link
-          href="/students"
+          href="/dashboard"
           className="rounded-md bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
         >
-          Voir les élèves
+          Retour dashboard
         </Link>
       </div>
 
@@ -89,6 +89,7 @@ export default function ClassesPage() {
           <thead className="text-white" style={{ backgroundColor: "#2563eb" }}>
             <tr>
               <th className="p-3 text-left">Classe</th>
+              <th className="p-3 text-left">Accès</th>
               <th className="p-3 text-right w-40">Actions</th>
             </tr>
           </thead>
@@ -98,7 +99,22 @@ export default function ClassesPage() {
               key={c.id}
               className="border-t border-gray-700 hover:bg-gray-800"
             >
-              <td className="p-3">{c.name}</td>
+              <td className="p-3">
+                <Link
+                  href={`/classes/${c.id}`}
+                  className="font-medium text-blue-400 hover:text-blue-300"
+                >
+                  {c.name}
+                </Link>
+              </td>
+              <td className="p-3">
+                <Link
+                  href={`/classes/${c.id}`}
+                  className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-500"
+                >
+                  Ouvrir la classe
+                </Link>
+              </td>
               <td className="p-3 text-right">
                 <div className="flex justify-end gap-2">
                   <button
@@ -120,7 +136,7 @@ export default function ClassesPage() {
 
           {classes.length === 0 && (
             <tr>
-              <td colSpan={2} className="p-4 text-center text-gray-400">
+              <td colSpan={3} className="p-4 text-center text-gray-400">
                 Aucune classe
               </td>
             </tr>

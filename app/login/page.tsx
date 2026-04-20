@@ -1,13 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!isMounted) return;
+
+      if (data.session) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      setIsCheckingSession(false);
+    };
+
+    checkSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      setIsCheckingSession(false);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [router]);
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -20,9 +55,16 @@ export default function Login() {
       return;
     }
 
-    alert("Connecté !");
-    router.push("/dashboard"); // ✅ PRO
+    router.replace("/dashboard");
   };
+
+  if (isCheckingSession) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4">
+        <p className="text-sm text-gray-400">Chargement...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4">

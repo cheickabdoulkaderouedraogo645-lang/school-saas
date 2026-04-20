@@ -17,6 +17,11 @@ type StudentRow = {
   average: number | null;
 };
 
+type AbsenceRow = {
+  student_id: string;
+  status: "present" | "absent";
+};
+
 const getOrdinalRank = (rank: number) => (rank === 1 ? "1er" : `${rank}ème`);
 
 export default function ClassStudentsPage() {
@@ -25,6 +30,7 @@ export default function ClassStudentsPage() {
 
   const [classItem, setClassItem] = useState<ClassRow | null>(null);
   const [students, setStudents] = useState<StudentRow[]>([]);
+  const [absenceCountByStudentId, setAbsenceCountByStudentId] = useState<Record<string, number>>({});
   const [name, setName] = useState("");
 
   const fetchData = async () => {
@@ -38,8 +44,29 @@ export default function ClassStudentsPage() {
         .eq("class_id", classId),
     ]);
 
+    const typedStudents = (studentsData as StudentRow[]) || [];
     setClassItem((classData as ClassRow | null) || null);
-    setStudents((studentsData as StudentRow[]) || []);
+    setStudents(typedStudents);
+
+    if (!typedStudents.length) {
+      setAbsenceCountByStudentId({});
+      return;
+    }
+
+    const studentIds = typedStudents.map((student) => student.id);
+    const { data: absencesData } = await supabase
+      .from("absences")
+      .select("student_id, status")
+      .in("student_id", studentIds)
+      .eq("status", "absent");
+
+    const typedAbsences = (absencesData as AbsenceRow[]) || [];
+    const absenceCounts = typedAbsences.reduce<Record<string, number>>((acc, absence) => {
+      acc[absence.student_id] = (acc[absence.student_id] || 0) + 1;
+      return acc;
+    }, {});
+
+    setAbsenceCountByStudentId(absenceCounts);
   };
 
   useEffect(() => {
@@ -108,6 +135,7 @@ export default function ClassStudentsPage() {
             <tr>
               <th className="p-3 text-left">Nom</th>
               <th className="p-3 text-left">Moyenne</th>
+              <th className="p-3 text-left">Absences</th>
               <th className="p-3 text-left">Rang</th>
               <th className="p-3 text-right w-56">Actions</th>
             </tr>
@@ -126,6 +154,7 @@ export default function ClassStudentsPage() {
                 <td className="p-3">
                   {student.average !== null ? student.average.toFixed(2) : "—"}
                 </td>
+                <td className="p-3">{absenceCountByStudentId[student.id] || 0}</td>
                 <td className="p-3">{getOrdinalRank(student.rank)}</td>
                 <td className="p-3 text-right">
                   <div className="flex justify-end gap-2">
@@ -147,7 +176,7 @@ export default function ClassStudentsPage() {
             ))}
             {rankedStudents.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-400">
+                <td colSpan={5} className="p-4 text-center text-gray-400">
                   Aucun élève dans cette classe.
                 </td>
               </tr>
